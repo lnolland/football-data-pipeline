@@ -1,0 +1,16 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+
+# local data
+pgdata/
+
+# vscode
+.vscode/
+
+# kubernetes local artifacts
+*.log
