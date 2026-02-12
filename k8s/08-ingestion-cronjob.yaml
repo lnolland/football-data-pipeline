@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ingestion
+  namespace: football
+spec:
+  schedule: "0 */6 * * *" # toutes les 6h
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+
+          # attend que Postgres accepte les connexions
+          initContainers:
+            - name: wait-for-postgres
+              image: postgres:16
+              envFrom:
+                - secretRef:
+                    name: pg-secret
+              command:
+                - sh
+                - -c
+                - |
+                  echo "Waiting for Postgres...";
+                  until pg_isready -h postgres -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                    sleep 2;
+                  done
+                  echo "Postgres is ready."
+
+          containers:
+            - name: ingestion
+              image: ghcr.io/xymun/football-data-pipeline/football-ingestion:latest
+              imagePullPolicy: Always
+              envFrom:
+                - configMapRef:
+                    name: ingestion-config
+                - secretRef:
+                    name: ingestion-secret
+                - secretRef:
+                    name: pg-secret
